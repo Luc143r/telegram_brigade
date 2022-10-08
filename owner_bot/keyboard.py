@@ -3,15 +3,30 @@ from aiogram.types import ReplyKeyboardRemove, \
     InlineKeyboardMarkup, InlineKeyboardButton
 
 
+####################
+# Кнопка регистрации
+####################
+
+
 button_administrator = InlineKeyboardButton(
     'Зарегистрироваться', callback_data='/reg_admin')
 markup_reg = InlineKeyboardMarkup()
 markup_reg.row(button_administrator)
 
 
+#############
+# Кнопка меню
+#############
+
+
 button_menu = InlineKeyboardButton('Меню', callback_data='/main_menu')
 markup_menu = InlineKeyboardMarkup()
 markup_menu.row(button_menu)
+
+
+###########################
+# Меню управления бригадами
+###########################
 
 
 button_add_brigade = InlineKeyboardButton(
