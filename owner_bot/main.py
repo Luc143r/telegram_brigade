@@ -1,8 +1,9 @@
+import sys
+sys.path.append("D:\\Coding\\Freelance\\telegram_brigade")
+from requests_db import create_database, create_brigade_table, create_users_table
 from config import owner_token_bot
 from fsm import *
 from keyboard import markup_reg, markup_menu, markup_brigade
-#from message_handlers import *
-#from callback_handlers import *
 
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
@@ -29,7 +30,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 if __name__ == '__main__':
-    #print('Bot pooling')
-    # executor.start_polling(dp)
+    create_database()
+    create_users_table()
+    create_brigade_table()
     from handlers import dp
+    print("Bot pooling")
     executor.start_polling(dp)

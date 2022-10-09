@@ -1,5 +1,6 @@
 from aiogram import types
 from main import dp, bot
+from requests_db import add_user
 from fsm import *
 from keyboard import *
 
@@ -12,7 +13,7 @@ from keyboard import *
 @dp.callback_query_handler(text='/reg_admin')
 async def reg_admin(callback_query: types.CallbackQuery):
     global owner_message_bot
-    owner_message_bot = await owner_message_bot.edit_text('Введите свое имя')
+    owner_message_bot = await owner_message_bot.edit_text('Введите свое ФИО')
     await Registration().role_user.set()
     callback_query.answer()
 
@@ -62,24 +63,14 @@ async def write_firstName(message: types.Message, state: FSMContext):
     await message.delete()
     await state.update_data(role_user='owner')
     await Registration.next()
-    await state.update_data(first_name=message.text)
-    global owner_message_bot
-    owner_message_bot = await owner_message_bot.edit_text('Отлично, а теперь фамилию')
-    await Registration.next()
-
-
-@dp.message_handler(state=Registration.second_name)
-async def write_secondName(message: types.Message, state: FSMContext):
-    await message.delete()
-    await state.update_data(second_name=message.text)
+    await state.update_data(name=message.text)
     await Registration.next()
     await state.update_data(tag_telegram=f'@{message.from_user.username}')
     data_user = await state.get_data()
     global owner_message_bot
-    print(owner_message_bot)
-    owner_message_bot = await owner_message_bot.edit_text('Хорошо. Вы зарегистрировались!')
+    owner_message_bot = await owner_message_bot.edit_text('Отлично, вы зарегистрировались')
     await owner_message_bot.edit_reply_markup(markup_menu)
-    print(data_user)
+    add_user(data_user['role_user'], data_user['name'], data_user['tag_telegram'])
     await state.finish()
 
 

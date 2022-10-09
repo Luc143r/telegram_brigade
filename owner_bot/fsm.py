@@ -4,8 +4,7 @@ from aiogram.dispatcher import FSMContext
 
 class Registration(StatesGroup):
     role_user = State()
-    first_name = State()
-    second_name = State()
+    name = State()
     tag_telegram = State()
 
 
