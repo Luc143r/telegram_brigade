@@ -1,7 +1,7 @@
 import sys
 sys.path.append("D:\\Coding\\Freelance\\telegram_brigade")
-from requests_db import create_database, create_brigade_table, create_users_table
-from config import owner_token_bot
+from requests_db import create_database, create_brigade_table, create_users_table, create_task_table, create_project_table
+from config import owner_token_bot, data_db
 from fsm import *
 from keyboard import markup_reg, markup_menu, markup_brigade
 
@@ -28,11 +28,14 @@ dp.middleware.setup(LoggingMiddleware())
 
 logging.basicConfig(level=logging.INFO)
 
+create_database()
+create_users_table()
+create_brigade_table()
+create_project_table()
+create_task_table()
+
 
 if __name__ == '__main__':
-    create_database()
-    create_users_table()
-    create_brigade_table()
     from handlers import dp
     print("Bot pooling")
     executor.start_polling(dp)
