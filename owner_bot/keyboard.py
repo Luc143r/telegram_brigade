@@ -25,6 +25,26 @@ markup_menu.row(button_menu)
 
 
 ##############
+#Кнопка отмены
+##############
+
+
+button_cancel = InlineKeyboardButton('Отмена', callback_data='/cancel')
+markup_cancel = InlineKeyboardMarkup()
+markup_cancel.row(button_cancel)
+
+
+###################
+#Убрать уведомление
+###################
+
+
+button_cancel_alert = InlineKeyboardButton('Убрать уведомление', callback_data='/cancel_alert')
+markup_cancel_alert = InlineKeyboardMarkup()
+markup_cancel_alert.row(button_cancel_alert)
+
+
+##############
 # Главное меню
 ##############
 

@@ -1,8 +1,10 @@
 from aiogram import types
 from main import dp, bot
+from config import date_pattern, time_pattern
 from requests_db import *
 from fsm import *
 from keyboard import *
+import re
 
 
 ########################################
@@ -10,31 +12,33 @@ from keyboard import *
 ########################################
 
 
-@dp.callback_query_handler(text='/reg_admin')
+@dp.callback_query_handler(lambda call: call.data == '/reg_admin')
 async def reg_admin(callback_query: types.CallbackQuery):
     global owner_message_bot
     owner_message_bot = await owner_message_bot.edit_text('Введите свое ФИО')
     await Registration().role_user.set()
-    callback_query.answer()
+    await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/main_menu')
-async def send_menu(callback_query: types.CallbackQuery):
+@dp.callback_query_handler(lambda call: call.data == '/main_menu')
+async def send_menu(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.finish()
     global owner_message_bot
     owner_message_bot = await owner_message_bot.edit_text('Главное меню')
     owner_message_bot = await owner_message_bot.edit_reply_markup(markup_brigade)
-    callback_query.answer()
+    await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/add_brigade')
+@dp.callback_query_handler(lambda call: call.data == '/add_brigade')
 async def add_brigade_menu(callback_query: types.CallbackQuery):
     global owner_message_bot
     owner_message_bot = await owner_message_bot.edit_text('Введите название бригады')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
     await Add_brigade().name_brigade.set()
-    callback_query.answer()
+    await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/list_brigade')
+@dp.callback_query_handler(lambda call: call.data == '/list_brigade')
 async def send_list_brigade(callback_query: types.CallbackQuery):
     global owner_message_bot
     all_brigade = select_all_brigade()
@@ -46,14 +50,14 @@ async def send_list_brigade(callback_query: types.CallbackQuery):
         list_brigade = '\n'.join(list_brigade)
         owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
     else:
         owner_message_bot = await owner_message_bot.edit_text('Вы еще не создавали бригад')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/del_brigade')
+@dp.callback_query_handler(lambda call: call.data == '/del_brigade')
 async def delete_brigade(callback_query: types.CallbackQuery):
     global owner_message_bot
     all_brigade = select_all_brigade()
@@ -64,15 +68,16 @@ async def delete_brigade(callback_query: types.CallbackQuery):
                 f'Название бригады: {brigade[1]} || Ответственный сотрудник: {brigade[2]}')
         list_brigade = '\n'.join(list_brigade)
         owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}\n\nПришлите название бригады, которую хотите удалить')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
         await Del_brigade().name_brigade.set()
-        callback_query.answer()
+        await callback_query.answer()
     else:
         owner_message_bot = await owner_message_bot.edit_text('У вас нету бригад')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/add_project')
+@dp.callback_query_handler(lambda call: call.data == '/add_project')
 async def add_proj(callback_query: types.CallbackQuery):
     global owner_message_bot
     all_brigade = select_all_brigade()
@@ -83,15 +88,72 @@ async def add_proj(callback_query: types.CallbackQuery):
                 f'Название бригады: {brigade[1]} || Ответственный сотрудник: {brigade[2]}')
         list_brigade = '\n'.join(list_brigade)
         owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}\n\nПришлите название бригады, для которой хотите создать проект')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
         await Add_project().brigade.set()
-        callback_query.answer()
+        await callback_query.answer()
     else:
         owner_message_bot = await owner_message_bot.edit_text('У вас нету бригад, для которых можно было бы создать проект')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
 
 
-@dp.callback_query_handler(text='/check_project')
+@dp.callback_query_handler(lambda call: call.data == '/add_global_task')
+async def add_global_task(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_brigade = select_all_brigade()
+    if all_brigade:
+        list_brigade = []
+        for brigade in all_brigade:
+            list_brigade.append(
+                f'Название бригады: {brigade[1]} || Ответственный сотрудник: {brigade[2]}')
+        list_brigade = '\n'.join(list_brigade)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}\n\nПришлите название бригады, для которой хотите создать задачу')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_global_task().executor.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету бригад, которым можно было бы поставить задачу.')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        await callback_query.answer()
+
+
+@dp.callback_query_handler(lambda call: call.data == '/add_project_task')
+async def add_project_task(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_project = select_all_project()
+    if all_project:
+        list_project = []
+        for project in all_project:
+            list_project.append(f'Название бригады: {project[3]} || Название проекта: {project[1]}')
+        list_project = '\n'.join(list_project)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, для которого хотите создать задачу')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_project_task().executor.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов, которым можно создать задачу')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+
+
+@dp.callback_query_handler(lambda call: call.data == '/add_mini_task')
+async def add_mini_task(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_user = select_employer()
+    if all_user:
+        list_user = []
+        for user in all_user:
+            list_user.append(f'Сотрудник: {user[2]} || Тег сотрудника: {user[3]}')
+        list_user = '\n'.join(list_user)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши сотрудники\n\n{list_user}\n\nПришлите тег сотрудника, которому хотите поставить задачу')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_mini_task.executor.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету сотрудников, которым можно поставить задачу')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+
+
+@dp.callback_query_handler(lambda call: call.data == '/check_project')
 async def list_project(callback_query: types.CallbackQuery):
     global owner_message_bot
     all_project = select_all_project()
@@ -103,11 +165,48 @@ async def list_project(callback_query: types.CallbackQuery):
         list_project = '\n'.join(list_project)
         owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
     else:
         owner_message_bot = await owner_message_bot.edit_text('Вы еще не создавали проектов')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        callback_query.answer()
+        await callback_query.answer()
+
+
+@dp.callback_query_handler(lambda call: call.data == '/del_project')
+async def delete_project(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_project = select_all_project()
+    if all_project:
+        list_project = []
+        for project in all_project:
+            list_project.append(
+                f'Название бригады: {project[3]} || Ответственный сотрудник: {project[1]}')
+        list_project = '\n'.join(list_project)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, который хотите удалить')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Del_project().name_project.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        await callback_query.answer()
+
+
+@dp.callback_query_handler(lambda call: call.data == '/cancel_alert')
+async def cancel_alert(callback_query: types.CallbackQuery):
+    await callback_query.message.delete()
+    await callback_query.answer()
+
+
+@dp.callback_query_handler(lambda call: call.data == '/cancel', state='*')
+async def cancel(callback_query: types.CallbackQuery, state: FSMContext):
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Главное меню')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_brigade)
+    await state.reset_data()
+    await state.reset_state()
+    await state.finish()
+    await callback_query.answer()
 
 
 ##########################################
@@ -164,6 +263,7 @@ async def write_nameBrigade(message: types.Message, state: FSMContext):
         list_users.append(f'{user[2]} - {user[3]}')
     list_users = '\n'.join(list_users)
     owner_message_bot = await owner_message_bot.edit_text(f'{list_users}\n\nВыберите одного сотрудника из вышеперечисленных и пришлите его тег')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
 
     await Add_brigade.next()
 
@@ -203,6 +303,7 @@ async def add_brigade_project(message: types.Message, state: FSMContext):
     await state.update_data(brigade=message.text)
     global owner_message_bot
     owner_message_bot = await owner_message_bot.edit_text('Введите название проекта')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
     await Add_project.next()
 
 
@@ -218,6 +319,7 @@ async def add_name_project(message: types.Message, state: FSMContext):
             list_users.append(f'{user[2]} - {user[3]}')
         list_users = '\n'.join(list_users)
         owner_message_bot = await owner_message_bot.edit_text(f'Доступные сотрудники:\n{list_users}\n\nПришлите список тегов сотрудников, которых хотите добавить в проект одним сообщением')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
         await Add_project.next()
 
 
@@ -246,3 +348,173 @@ async def add_employers_project(message: types.Message, state: FSMContext):
     for user in employers:
         change_visible('0', user.replace(' ', ''))
     await state.finish()
+
+
+@dp.message_handler(state=Del_project.name_project)
+async def delete_one_brigade(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(name_brigade=message.text)
+    global owner_message_bot
+    list_employers = select_one_project(message.text)
+    for user in list_employers:
+        tag_user = get_tag_user(user)
+        change_visible(1, tag_user)
+    del_proj(message.text)
+    owner_message_bot = await owner_message_bot.edit_text('Проект удален')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+    await state.finish()
+
+
+@dp.message_handler(state=Add_global_task.executor)
+async def add_executor_global_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    brigade = select_one_brigade(message.text)
+    global owner_message_bot
+    if brigade:
+        await state.update_data(executor=message.text)
+        owner_message_bot = await owner_message_bot.edit_text('Введите название задачи')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_global_task.next()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Такой бригады нету, повторите ввод заного')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Add_global_task.name_task)
+async def add_name_global_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(name_task=message.text)
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Введите описание задачи')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+    await Add_global_task.next()
+
+
+@dp.message_handler(state=Add_global_task.description)
+async def add_decription_global_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(description=message.text)
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Укажите сроки выполнения задачи в формате "dd/mm/yyyy"')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+    await Add_global_task.next()
+
+
+@dp.message_handler(state=Add_global_task.deadline)
+async def add_deadline_global_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    if re.match(date_pattern, message.text):
+        await state.update_data(deadline=message.text)
+        await Add_global_task.next()
+        await state.update_data(owner_task=message.from_user.id)
+        owner_message_bot = await owner_message_bot.edit_text('Задача создана.')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        data_task = await state.get_data()
+        print(data_task)
+        add_brigade_task('global', data_task['executor'], data_task['name_task'],
+                         data_task['description'], data_task['deadline'], data_task['owner_task'])
+        await state.finish()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Введена не верная дата')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Add_project_task.executor)
+async def add_executor_project_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    project = select_one_project(message.text)
+    if project:
+        await state.update_data(executor=message.text)
+        owner_message_bot = await owner_message_bot.edit_text('Введите название задачи')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_project_task.next()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Такого проекта нету, повторите ввод заного')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Add_project_task.name_task)
+async def add_name_project_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(name_task=message.text)
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Введите описание задачи')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+    await Add_project_task.next()
+
+
+@dp.message_handler(state=Add_project_task.description)
+async def add_decription_project_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(description=message.text)
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Укажите сроки выполнения задачи в формате "dd/mm/yyyy"')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+    await Add_project_task.next()
+
+
+@dp.message_handler(state=Add_project_task.deadline)
+async def add_deadline_global_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    if re.match(date_pattern, message.text):
+        await state.update_data(deadline=message.text)
+        await Add_project_task.next()
+        await state.update_data(owner_task=message.from_user.id)
+        owner_message_bot = await owner_message_bot.edit_text('Задача создана.')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        data_task = await state.get_data()
+        print(data_task)
+        add_brigade_task('project', data_task['executor'], data_task['name_task'],
+                         data_task['description'], data_task['deadline'], data_task['owner_task'])
+        await state.finish()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Введена не верная дата')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Add_mini_task.executor)
+async def add_executor_mini_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    users = select_one_user(message.text)
+    if users:
+        await state.update_data(executor=message.text)
+        owner_message_bot = await owner_message_bot.edit_text('Введите название задачи')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Add_mini_task.next()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Такого сотрудника нету, повторите ввод заного')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Add_mini_task.name_task)
+async def add_name_mini_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.update_data(name_task=message.text)
+    global owner_message_bot
+    owner_message_bot = await owner_message_bot.edit_text('Введите время до которого нужно выполнить задачу в формате HH:MM')
+    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+    await Add_mini_task.next()
+
+
+@dp.message_handler(state=Add_mini_task.deadline)
+async def add_deadline_mini_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    if re.match(time_pattern, message.text):
+        await state.update_data(deadline=message.text)
+        await Add_mini_task.next()
+        await state.update_data(owner_task=message.from_user.id)
+        owner_message_bot = await owner_message_bot.edit_text('Задача создана.')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        data_task = await state.get_data()
+        print(data_task)
+        add_empl_task(data_task['executor'], data_task['name_task'], data_task['deadline'], data_task['owner_task'])
+        await state.finish()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Введена не верная дата')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
