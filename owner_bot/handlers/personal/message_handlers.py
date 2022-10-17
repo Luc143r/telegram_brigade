@@ -236,6 +236,11 @@ async def check_task(callback_query: types.CallbackQuery):
         list_task = '\n'.join(list_task)
         owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nЧтобы отметить задачу выполненной, пришлите ее название')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Done_task.name_task.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
 
 
 @dp.callback_query_handler(lambda call: call.data == '/cancel_alert')
@@ -573,6 +578,21 @@ async def delete_task(message: types.Message, state: FSMContext):
         await state.update_data(name_task=message.text)
         del_task(message.text)
         owner_message_bot = await owner_message_bot.edit_text('Задача удалена')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        await state.finish()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Такой задачи нету в списке, повторите ввод')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
+@dp.message_handler(state=Done_task.name_task)
+async def done_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    if select_one_task(message.text):
+        await state.update_data(name_task=message.text)
+        change_status_task(message.text)
+        owner_message_bot = await owner_message_bot.edit_text(f'Задача {message.text} отмечена выполненной')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
         await state.finish()
     else:
