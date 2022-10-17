@@ -47,3 +47,7 @@ class Add_mini_task(StatesGroup):
     name_task = State()
     deadline = State()
     owner_task = State()
+
+
+class Del_task(StatesGroup):
+    name_task = State()
