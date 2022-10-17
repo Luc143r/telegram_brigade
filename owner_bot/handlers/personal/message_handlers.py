@@ -192,6 +192,52 @@ async def delete_project(callback_query: types.CallbackQuery):
         await callback_query.answer()
 
 
+@dp.callback_query_handler(lambda call: call.data == '/del_task')
+async def delete_task(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_task = select_all_task()
+    if all_task:
+        list_task = []
+        for task in all_task:
+            if task[1] == 'global':
+                list_task.append(f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
+                print(list_task)
+            elif task[1] == 'project':
+                list_task.append(f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
+            elif task[1] == 'mini':
+                list_task.append(f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
+        list_task = '\n'.join(list_task)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nПришлите название задачи, которую хотите удалить')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+        await Del_task.name_task.set()
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+
+
+@dp.callback_query_handler(lambda call: call.data == '/check_task')
+async def check_task(callback_query: types.CallbackQuery):
+    global owner_message_bot
+    all_task = select_all_task()
+    if all_task:
+        list_task = []
+        for task in all_task:
+            if task[1] == 'global':
+                list_task.append(
+                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
+                print(list_task)
+            elif task[1] == 'project':
+                list_task.append(
+                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
+            elif task[1] == 'mini':
+                list_task.append(
+                    f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
+        list_task = '\n'.join(list_task)
+        owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nЧтобы отметить задачу выполненной, пришлите ее название')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+
+
 @dp.callback_query_handler(lambda call: call.data == '/cancel_alert')
 async def cancel_alert(callback_query: types.CallbackQuery):
     await callback_query.message.delete()
@@ -515,6 +561,20 @@ async def add_deadline_mini_task(message: types.Message, state: FSMContext):
         add_empl_task(data_task['executor'], data_task['name_task'], data_task['deadline'], data_task['owner_task'])
         await state.finish()
     else:
-        owner_message_bot = await owner_message_bot.edit_text('Введена не верная дата')
+        owner_message_bot = await owner_message_bot.edit_text('Введена не верная дата, повторите ввод')
         owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
 
+
+@dp.message_handler(state=Del_task.name_task)
+async def delete_task(message: types.Message, state: FSMContext):
+    await message.delete()
+    global owner_message_bot
+    if select_one_task(message.text):
+        await state.update_data(name_task=message.text)
+        del_task(message.text)
+        owner_message_bot = await owner_message_bot.edit_text('Задача удалена')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        await state.finish()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Такой задачи нету в списке, повторите ввод')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)

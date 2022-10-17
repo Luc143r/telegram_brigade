@@ -51,3 +51,7 @@ class Add_mini_task(StatesGroup):
 
 class Del_task(StatesGroup):
     name_task = State()
+
+
+class Done_task(StatesGroup):
+    name_task = State()

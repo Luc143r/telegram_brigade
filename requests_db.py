@@ -358,6 +358,34 @@ def select_mini_task():
         return mini_task
 
 
+def select_all_task():
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        select_task = """SELECT * FROM tasks WHERE status=0"""
+        cursor = connection.cursor()
+        cursor.execute(select_task)
+        all_task = cursor.fetchall()
+        return all_task
+
+
+def select_one_task(name_task):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        select_task = """SELECT * FROM tasks WHERE name_task=%s"""
+        cursor = connection.cursor()
+        cursor.execute(select_task, (name_task,))
+        task = cursor.fetchone()
+        return task
+
+
 def del_brig(name_brigade):
     with connect(
         host=data_db['host'],
@@ -368,6 +396,19 @@ def del_brig(name_brigade):
         delete_brigade = """DELETE FROM brigade WHERE name_brigade=%s"""
         cursor = connection.cursor()
         cursor.execute(delete_brigade, (name_brigade,))
+        connection.commit()
+
+
+def del_task(name_task):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        delete_task = """DELETE FROM tasks WHERE name_task=%s"""
+        cursor = connection.cursor()
+        cursor.execute(delete_task, (name_task,))
         connection.commit()
 
 
@@ -409,4 +450,17 @@ def change_visible(visible, tag):
         change_visible = """UPDATE users SET visible=%s WHERE tag_telegram=%s"""
         info_user = (visible, tag)
         cursor.execute(change_visible, info_user)
+        connection.commit()
+
+
+def change_status_task(name_task):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        cursor = connection.cursor()
+        change_status = """UPDATE tasks SET status=1 WHERE name_task=%s"""
+        cursor.execute(change_status, (name_task,))
         connection.commit()
