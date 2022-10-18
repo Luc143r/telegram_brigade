@@ -2,34 +2,34 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher import FSMContext
 
 
-class Registration(StatesGroup):
-    role_user = State()
-    first_name = State()
-    second_name = State()
-    tag_telegram = State()
-
-
-class Add_brigade(StatesGroup):
-    name_brigade = State()
-    responsible_employer = State()
-    employers = State()
-
-
-class Create_project(StatesGroup):
+class Add_project(StatesGroup):
+    brigade = State()
     name_project = State()
-    responsible_employer = State()
     employers = State()
 
 
-class Global_task(StatesGroup):
-    name_task = State()
-    description_task = State()
-    deadline_task = State()
-    creator_task = State()
+class Del_project(StatesGroup):
+    name_project = State()
 
 
-class Mini_task(StatesGroup):
+class Add_project_task(StatesGroup):
+    executor = State()
     name_task = State()
-    deadline_task = State()
-    employer_task = State()
-    creator_task = State()
+    description = State()
+    deadline = State()
+    owner_task = State()
+
+
+class Add_mini_task(StatesGroup):
+    executor = State()
+    name_task = State()
+    deadline = State()
+    owner_task = State()
+
+
+class Del_task(StatesGroup):
+    name_task = State()
+
+
+class Done_task(StatesGroup):
+    name_task = State()
