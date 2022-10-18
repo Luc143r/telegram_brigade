@@ -13,163 +13,202 @@ import re
 
 
 @dp.callback_query_handler(lambda call: call.data == '/main_menu')
-async def send_menu(callback_query: types.CallbackQuery, state: FSMContext):
-    await state.finish()
+async def send_menu(callback_query: types.CallbackQuery):
     global owner_message_bot
-    owner_message_bot = await owner_message_bot.edit_text('Главное меню')
-    owner_message_bot = await owner_message_bot.edit_reply_markup(markup_brigade)
-    await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        owner_message_bot = await owner_message_bot.edit_text('Главное меню')
+        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_brigade)
+        await callback_query.answer()
+    else:
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
+        await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/add_project')
 async def add_proj(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_brigade = select_all_brigade()
-    if all_brigade:
-        list_brigade = []
-        for brigade in all_brigade:
-            list_brigade.append(
-                f'Название бригады: {brigade[1]} || Ответственный сотрудник: {brigade[2]}')
-        list_brigade = '\n'.join(list_brigade)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}\n\nПришлите название бригады, для которой хотите создать проект')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Add_project().brigade.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_brigade = select_all_brigade()
+        if all_brigade:
+            list_brigade = []
+            for brigade in all_brigade:
+                list_brigade.append(
+                    f'Название бригады: {brigade[1]} || Ответственный сотрудник: {brigade[2]}')
+            list_brigade = '\n'.join(list_brigade)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши бригады\n\n{list_brigade}\n\nПришлите название бригады, для которой хотите создать проект')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Add_project().brigade.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету бригад, для которых можно было бы создать проект')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+            await callback_query.answer()
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету бригад, для которых можно было бы создать проект')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
         await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/add_project_task')
 async def add_project_task(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_project = select_all_project()
-    if all_project:
-        list_project = []
-        for project in all_project:
-            list_project.append(
-                f'Название бригады: {project[3]} || Название проекта: {project[1]}')
-        list_project = '\n'.join(list_project)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, для которого хотите создать задачу')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Add_project_task().executor.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_project = select_all_project()
+        if all_project:
+            list_project = []
+            for project in all_project:
+                list_project.append(
+                    f'Название бригады: {project[3]} || Название проекта: {project[1]}')
+            list_project = '\n'.join(list_project)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, для которого хотите создать задачу')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Add_project_task().executor.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов, которым можно создать задачу')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов, которым можно создать задачу')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
+        await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/add_mini_task')
 async def add_mini_task(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_user = select_employer()
-    if all_user:
-        list_user = []
-        for user in all_user:
-            list_user.append(
-                f'Сотрудник: {user[2]} || Тег сотрудника: {user[3]}')
-        list_user = '\n'.join(list_user)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши сотрудники\n\n{list_user}\n\nПришлите тег сотрудника, которому хотите поставить задачу')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Add_mini_task.executor.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_user = select_employer()
+        if all_user:
+            list_user = []
+            for user in all_user:
+                list_user.append(
+                    f'Сотрудник: {user[2]} || Тег сотрудника: {user[3]}')
+            list_user = '\n'.join(list_user)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши сотрудники\n\n{list_user}\n\nПришлите тег сотрудника, которому хотите поставить задачу')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Add_mini_task.executor.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету сотрудников, которым можно поставить задачу')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету сотрудников, которым можно поставить задачу')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
+        await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/check_project')
 async def list_project(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_project = select_all_project()
-    if all_project:
-        list_project = []
-        for project in all_project:
-            list_project.append(
-                f'Название бригады: {project[3]} || Название проекта: {project[1]}')
-        list_project = '\n'.join(list_project)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_project = select_all_project()
+        if all_project:
+            list_project = []
+            for project in all_project:
+                list_project.append(
+                    f'Название бригады: {project[3]} || Название проекта: {project[1]}')
+            list_project = '\n'.join(list_project)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('Вы еще не создавали проектов')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+            await callback_query.answer()
     else:
-        owner_message_bot = await owner_message_bot.edit_text('Вы еще не создавали проектов')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
         await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/del_project')
 async def delete_project(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_project = select_all_project()
-    if all_project:
-        list_project = []
-        for project in all_project:
-            list_project.append(
-                f'Название бригады: {project[3]} || Ответственный сотрудник: {project[1]}')
-        list_project = '\n'.join(list_project)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, который хотите удалить')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Del_project().name_project.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_project = select_all_project()
+        if all_project:
+            list_project = []
+            for project in all_project:
+                list_project.append(
+                    f'Название бригады: {project[3]} || Ответственный сотрудник: {project[1]}')
+            list_project = '\n'.join(list_project)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши проекты\n\n{list_project}\n\nПришлите название проекта, который хотите удалить')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Del_project().name_project.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+            await callback_query.answer()
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету проектов')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
         await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/del_task')
 async def delete_task(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_task = select_all_task()
-    if all_task:
-        list_task = []
-        for task in all_task:
-            if task[1] == 'global':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
-                print(list_task)
-            elif task[1] == 'project':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
-            elif task[1] == 'mini':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
-        list_task = '\n'.join(list_task)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nПришлите название задачи, которую хотите удалить')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Del_task.name_task.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_task = select_all_task()
+        if all_task:
+            list_task = []
+            for task in all_task:
+                if task[1] == 'global':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
+                    print(list_task)
+                elif task[1] == 'project':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
+                elif task[1] == 'mini':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
+            list_task = '\n'.join(list_task)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nПришлите название задачи, которую хотите удалить')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Del_task.name_task.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
+        await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/check_task')
 async def check_task(callback_query: types.CallbackQuery):
     global owner_message_bot
-    all_task = select_all_task()
-    if all_task:
-        list_task = []
-        for task in all_task:
-            if task[1] == 'global':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
-                print(list_task)
-            elif task[1] == 'project':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
-            elif task[1] == 'mini':
-                list_task.append(
-                    f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
-        list_task = '\n'.join(list_task)
-        owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nЧтобы отметить задачу выполненной, пришлите ее название')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
-        await Done_task.name_task.set()
-        await callback_query.answer()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        all_task = select_all_task()
+        if all_task:
+            list_task = []
+            for task in all_task:
+                if task[1] == 'global':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: бригада - {task[6]}\n\n')
+                    print(list_task)
+                elif task[1] == 'project':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nОписание задачи: {task[3]}\nДедлайн задачи: {task[4]}\nИсполнитель: проект - {task[6]}\n\n')
+                elif task[1] == 'mini':
+                    list_task.append(
+                        f'Название задачи: {task[2]}\nДедлайн задачи: {task[4]}\nИсполнитель: сотрудник - {task[6]}\n\n')
+            list_task = '\n'.join(list_task)
+            owner_message_bot = await owner_message_bot.edit_text(f'Ваши задачи:\n\n{list_task}\n\nЧтобы отметить задачу выполненной, пришлите ее название')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_cancel)
+            await Done_task.name_task.set()
+            await callback_query.answer()
+        else:
+            owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
+            owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
     else:
-        owner_message_bot = await owner_message_bot.edit_text('У вас нету задач')
-        owner_message_bot = await owner_message_bot.edit_reply_markup(markup_menu)
+        owner_message_bot = await owner_message_bot.edit_text('Нет доступа')
+        await callback_query.answer()
 
 
 @dp.callback_query_handler(lambda call: call.data == '/cancel_alert')
@@ -197,15 +236,25 @@ async def cancel(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(commands='start')
 async def command_start(message: types.Message):
     global owner_message_bot
-    owner_message_bot = await bot.send_message(message.chat.id, f'@{message.from_user.username}, приветствую. Пройди простую регистрацию', reply_markup=markup_reg)
-    await message.delete()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        owner_message_bot = await bot.send_message(message.chat.id, 'Главное меню', reply_markup=markup_brigade)
+        await message.delete()
+    else:
+        owner_message_bot = await bot.send_message(message.chat.id, 'У вас нету здесь прав доступа')
+        await message.delete()
 
 
 @dp.message_handler(commands='menu')
 async def command_menu(message: types.Message):
     global owner_message_bot
-    owner_message_bot = await bot.send_message(message.chat.id, 'Главное меню', reply_markup=markup_brigade)
-    await message.delete()
+    role = check_role(f'@{message.from_user.username}')
+    if role == 'owner' or role == 'admin':
+        owner_message_bot = await bot.send_message(message.chat.id, 'Главное меню', reply_markup=markup_brigade)
+        await message.delete()
+    else:
+        owner_message_bot = await bot.send_message(message.chat.id, 'У вас нету здесь прав доступа')
+        await message.delete()
 
 
 @dp.message_handler(state=Add_project.brigade)

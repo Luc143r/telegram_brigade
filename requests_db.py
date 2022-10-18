@@ -386,6 +386,20 @@ def select_one_task(name_task):
         return task
 
 
+def check_role(tag_telegram):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        check_role = """SELECT role_users FROM users WHERE tag_telegram=%s"""
+        cursor = connection.cursor()
+        cursor.execute(check_role, (tag_telegram,))
+        role = cursor.fetchone()
+        return role[0]
+
+
 def del_brig(name_brigade):
     with connect(
         host=data_db['host'],
