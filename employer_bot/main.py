@@ -1,7 +1,7 @@
 import sys
 sys.path.append("D:\\Coding\\Freelance\\telegram_brigade")
 from requests_db import *
-from config import admin_token_bot, data_db
+from config import user_token_bot, data_db
 from fsm import *
 from keyboard import *
 from aiogram import Bot, types
@@ -20,7 +20,7 @@ from time import sleep
 import datetime
 
 
-bot = Bot(token=admin_token_bot)
+bot = Bot(token=user_token_bot)
 dp = Dispatcher(bot, storage=MemoryStorage())
 dp.middleware.setup(LoggingMiddleware())
 logging.basicConfig(level=logging.INFO)

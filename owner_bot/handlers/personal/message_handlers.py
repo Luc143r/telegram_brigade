@@ -273,15 +273,25 @@ async def cancel(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(commands='start')
 async def command_start(message: types.Message):
     global owner_message_bot
-    owner_message_bot = await bot.send_message(message.chat.id, f'@{message.from_user.username}, приветствую. Пройди простую регистрацию', reply_markup=markup_reg)
-    await message.delete()
+    user = select_id_user(f'{message.from_user.username}')
+    if not user:
+        owner_message_bot = await bot.send_message(message.chat.id, f'@{message.from_user.username}, приветствую. Пройди простую регистрацию', reply_markup=markup_reg)
+        await message.delete()
+    else:
+        owner_message_bot = await bot.send_message(message.chat.id, 'Вы уже зарегистрированы', reply_markup=markup_brigade)
+        await message.delete()
 
 
 @dp.message_handler(commands='reg')
 async def command_reg(message: types.Message):
     global owner_message_bot
-    owner_message_bot = await bot.send_message(message.chat.id, f'@{message.from_user.username}, приветствую. Пройди простую регистрацию в зависимости от твоей роли в организации', reply_markup=markup_reg)
-    await message.delete()
+    user = select_id_user(f'{message.from_user.username}')
+    if not user:
+        owner_message_bot = await bot.send_message(message.chat.id, f'@{message.from_user.username}, приветствую. Пройди простую регистрацию', reply_markup=markup_reg)
+        await message.delete()
+    else:
+        owner_message_bot = await bot.send_message(message.chat.id, 'Вы уже зарегистрированы', reply_markup=markup_brigade)
+        await message.delete()
 
 
 @dp.message_handler(commands='menu')

@@ -272,6 +272,24 @@ def select_one_project(name_project):
         return get_nums(id_users[0][0])
 
 
+def get_project_user(id_user):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        select_project = """SELECT name_project, employers FROM project"""
+        cursor = connection.cursor()
+        cursor.execute(select_project)
+        result = cursor.fetchall()
+        list_project = []
+        for i in result:
+            if str(id_user) in i[1]:
+                list_project.append(i)
+        return list_project
+
+
 def select_id_user(tag):
     with connect(
         host=data_db['host'],
@@ -342,6 +360,34 @@ def select_project_task():
         cursor.execute(select_task)
         project_task = cursor.fetchall()
         return project_task
+
+
+def select_task_for_project(name_project):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        select_task = """SELECT * FROM tasks WHERE executor=%s"""
+        cursor = connection.cursor()
+        cursor.execute(select_task, (name_project,))
+        project_task = cursor.fetchall()
+        return project_task
+
+
+def select_user_task(tag_telegram):
+    with connect(
+        host=data_db['host'],
+        user=data_db['user'],
+        password=data_db['password'],
+        database=data_db['database'],
+    ) as connection:
+        select_task = """SELECT * FROM tasks WHERE executor=%s"""
+        cursor = connection.cursor()
+        cursor.execute(select_task, (tag_telegram,))
+        user_task = cursor.fetchall()
+        return user_task
 
 
 def select_mini_task():
