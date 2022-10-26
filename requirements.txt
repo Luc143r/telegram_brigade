@@ -1,0 +1,2 @@
+aiogram==2.21
+config==0.5.1
